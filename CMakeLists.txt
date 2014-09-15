@@ -1,7 +1,10 @@
 project(pbrt-v2)
 cmake_minimum_required (VERSION 2.8)
 
-add_definitions(-DPBRT_PROBES_NONE)
+add_definitions(
+	-DPBRT_HAS_OPENEXR
+	-DPBRT_PROBES_NONE
+)
 
 # place to find cmake modules
 set(CMAKE_MODULE_PATH

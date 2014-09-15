@@ -46,6 +46,7 @@
 #include "accelerators/bvh.h"
 #include "accelerators/grid.h"
 #include "accelerators/kdtreeaccel.h"
+#include "accelerators/octreeaccel.h"
 #include "cameras/environment.h"
 #include "cameras/orthographic.h"
 #include "cameras/perspective.h"
@@ -587,6 +588,8 @@ Primitive *MakeAccelerator(const string &name,
         accel = CreateGridAccelerator(prims, paramSet);
     else if (name == "kdtree")
         accel = CreateKdTreeAccelerator(prims, paramSet);
+    else if (name == "octree")
+        accel = CreateOctreeAccelerator(prims, paramSet);
     else
         Warning("Accelerator \"%s\" unknown.", name.c_str());
     paramSet.ReportUnused();
@@ -1049,7 +1052,7 @@ void pbrtShape(const string &name, const ParamSet &params) {
             Warning("Area lights not supported with object instancing");
         renderOptions->currentInstance->push_back(prim);
     }
-    
+
     else {
         renderOptions->primitives.push_back(prim);
         if (area != NULL) {
