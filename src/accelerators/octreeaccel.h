@@ -43,7 +43,7 @@ public:
 private:
 	prim_array oct_primitives;
     OctreeNode *root;
-    OctreeNode *makeNode(BBox, unsigned int);
+    OctreeNode *makeNode(const prim_array &, BBox, unsigned int);
 };
 
 OctreeAccel *CreateOctreeAccelerator(const vector<Reference<Primitive> > &prims,

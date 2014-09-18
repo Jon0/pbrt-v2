@@ -51,21 +51,23 @@ bool OctreeNode::Intersect(const Ray &ray, Intersection *isect) const {
     if (isEmpty || !bounds.IntersectP(ray, &tmin, &tmax)) {
         return false;
     }
+    bool hasHit = false;
 	if (isLeaf) {
+
 		for (const auto &p: prims) {
 			if (p->Intersect(ray, isect)) {
-				return true;
+				hasHit = true;
 			}
 		}
 	}
 	else {
 		for (OctreeNode *child: c) {
 			if (child->Intersect(ray, isect)) {
-				return true;
+				hasHit = true;
 			}
 		}
 	}
-	return false;
+	return hasHit;
 }
 
 OctreeAccel::OctreeAccel(const vector<Reference<Primitive> > &primitives) {
@@ -77,7 +79,8 @@ OctreeAccel::OctreeAccel(const vector<Reference<Primitive> > &primitives) {
         BBox b = oct_primitives[i]->WorldBound();
         bounds = Union(bounds, b);
     }
-    root = makeNode(bounds, 8);
+    root = makeNode(oct_primitives, bounds, 10);
+    std::cout << "octree contains " << root->size << " nodes" << std::endl;
 }
 
 OctreeAccel::~OctreeAccel() {}
@@ -91,49 +94,39 @@ bool OctreeAccel::IntersectP(const Ray &ray) const {
 	return Intersect(ray, in);
 }
 
-OctreeNode *OctreeAccel::makeNode(BBox b, unsigned int maxDepth) {
-	if (maxDepth >= 5) {
-		std::cout << "depth = " << maxDepth << std::endl;
-		//std::cout << b.pMin.x << ", " << b.pMin.y << ", " << b.pMin.z << std::endl;
-		//std::cout << b.pMax.x << ", " << b.pMax.y << ", " << b.pMax.z << std::endl;
-	}
+OctreeNode *OctreeAccel::makeNode(const prim_array &pool, BBox b, unsigned int maxDepth) {
 	OctreeNode *node = new OctreeNode;
     node->size = 0;
 	node->bounds = b;
 
 	// find content in the node
-	int content = 0;
-    for (const auto &p: oct_primitives) {
+	prim_array content;
+    for (const auto &p: pool) {
         if (b.Overlaps( p->WorldBound() )) {
-        	content++;
+        	content.push_back(p);
         }
     }
 
-	if (maxDepth && content > 16) {
+	if (maxDepth && content.size() > 8) {
 	    // create 8 children
 		node->isLeaf = false;
 		// does the node contain anything
 		node->isEmpty = false;
 		for (int i = 0; i < 8; ++i) {
-			OctreeNode *child = makeNode(subBoxIndex(b, i), maxDepth - 1);
+			OctreeNode *child = makeNode(content, subBoxIndex(b, i), maxDepth - 1);
 			node->c[i] = child;
 			node->size += child->size;
 		}
 	}
 	else {
 		node->isLeaf = true;
-	    for (const auto &p: oct_primitives) {
+	    for (const auto &p: content) {
 	        if (b.Overlaps(p->WorldBound())) {
 	    		node->prims.push_back(p);
 	        }
 	    }
 	    node->isEmpty = (node->prims.size() == 0);
 	    node->size = 1;
-	}
-
-
-	if (maxDepth >= 5) {
-		std::cout << "contains " << node->size << " nodes" << std::endl;
 	}
 	return node;
 }
