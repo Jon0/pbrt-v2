@@ -118,6 +118,7 @@
 #include "textures/imagemap.h"
 #include "textures/marble.h"
 #include "textures/mix.h"
+#include "textures/randomtex.h"
 #include "textures/scale.h"
 #include "textures/uv.h"
 #include "textures/windy.h"
@@ -473,6 +474,8 @@ Reference<Texture<Spectrum> > MakeSpectrumTexture(const string &name,
         tex = CreateMarbleSpectrumTexture(tex2world, tp);
     else if (name == "windy")
         tex = CreateWindySpectrumTexture(tex2world, tp);
+    else if (name == "randomtex")
+        tex = CreateRandomSpectrumTexture(tex2world, tp);
     else
         Warning("Spectrum texture \"%s\" unknown.", name.c_str());
     tp.ReportUnused();

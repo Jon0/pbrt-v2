@@ -11,13 +11,17 @@
 #include "pbrt.h"
 #include "primitive.h"
 
-struct OctreeNode {
+typedef vector<Reference<Primitive> > prim_array;
+
+class OctreeNode {
+public:
+	bool Intersect(const Ray &ray, Intersection *isect) const;
+
 	OctreeNode *c[8];
 	BBox bounds;
-	vector<uint32_t> prim_index;
+	prim_array prims;
 	bool isLeaf, isEmpty;
-
-
+	unsigned int size;
 };
 
 class OctreeAccel : public Aggregate {
@@ -37,7 +41,7 @@ public:
 	bool IntersectP(const Ray &ray) const;
 
 private:
-	vector<Reference<Primitive> > oct_primitives;
+	prim_array oct_primitives;
     OctreeNode *root;
     OctreeNode *makeNode(BBox, unsigned int);
 };

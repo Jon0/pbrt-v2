@@ -40,8 +40,6 @@ Texture<float> *CreateMarbleFloatTexture(const Transform &tex2world,
     return NULL;
 }
 
-
-
 MarbleTexture *CreateMarbleSpectrumTexture(const Transform &tex2world,
         const TextureParams &tp) {
     // Initialize 3D texture mapping _map_ from _tp_

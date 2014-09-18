@@ -52,6 +52,7 @@ public:
                   TextureMapping3D *map)
         : octaves(oct), omega(roughness), scale(sc), variation(var),
           mapping(map) { }
+
     Spectrum Evaluate(const DifferentialGeometry &dg) const {
         Vector dpdx, dpdy;
         Point P = mapping->Map(dg, &dpdx, &dpdy);
@@ -63,6 +64,7 @@ public:
         static float c[][3] = { { .58f, .58f, .6f }, { .58f, .58f, .6f }, { .58f, .58f, .6f },
             { .5f, .5f, .5f }, { .6f, .59f, .58f }, { .58f, .58f, .6f },
             { .58f, .58f, .6f }, {.2f, .2f, .33f }, { .58f, .58f, .6f }, };
+
 #define NC  sizeof(c) / sizeof(c[0])
 #define NSEG (NC-3)
         int first = Floor2Int(t * NSEG);
@@ -80,6 +82,7 @@ public:
         // Extra scale of 1.5 to increase variation among colors
         return 1.5f * ((1.f - t) * s0 + t * s1);
     }
+
 private:
     // MarbleTexture Private Data
     int octaves;

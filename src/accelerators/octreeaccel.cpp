@@ -21,6 +21,14 @@ Point dirIndex(int i) {
 	return p;
 }
 
+int dirIndex(Vector &v) {
+	int i = 0;
+	if (v.x > 0) i += 1;
+	if (v.y > 0) i += 2;
+	if (v.z > 0) i += 4;
+	return i;
+}
+
 /*
  * create a divided bbox
  */
@@ -38,6 +46,28 @@ BBox subBoxIndex(BBox b, int i) {
 	return newb;
 }
 
+bool OctreeNode::Intersect(const Ray &ray, Intersection *isect) const {
+    float tmin, tmax;
+    if (isEmpty || !bounds.IntersectP(ray, &tmin, &tmax)) {
+        return false;
+    }
+	if (isLeaf) {
+		for (const auto &p: prims) {
+			if (p->Intersect(ray, isect)) {
+				return true;
+			}
+		}
+	}
+	else {
+		for (OctreeNode *child: c) {
+			if (child->Intersect(ray, isect)) {
+				return true;
+			}
+		}
+	}
+	return false;
+}
+
 OctreeAccel::OctreeAccel(const vector<Reference<Primitive> > &primitives) {
     for (uint32_t i = 0; i < primitives.size(); ++i)
     	primitives[i]->FullyRefine(oct_primitives);
@@ -47,47 +77,13 @@ OctreeAccel::OctreeAccel(const vector<Reference<Primitive> > &primitives) {
         BBox b = oct_primitives[i]->WorldBound();
         bounds = Union(bounds, b);
     }
-    root = makeNode(bounds, 4);
+    root = makeNode(bounds, 8);
 }
 
 OctreeAccel::~OctreeAccel() {}
 
 bool OctreeAccel::Intersect(const Ray &ray, Intersection *isect) const {
-    float tmin, tmax;
-    if (!root->bounds.IntersectP(ray, &tmin, &tmax)) {
-        return false;
-    }
-
-    vector<OctreeNode *> leaves;
-    vector<OctreeNode *> search;
-    search.push_back(root);
-    while (!search.empty()) {
-    	OctreeNode *nn = search.back();
-    	search.pop_back();
-
-    	if (nn->isEmpty) {
-    		continue;
-    	}
-    	else if (nn->isLeaf) {
-    		leaves.push_back(nn);
-    	}
-    	else {
-    		for (int i = 0; i < 8; ++i) {
-    			if (nn->c[i]->bounds.IntersectP(ray)) {
-    				search.push_back(nn->c[i]);
-    			}
-    		}
-    	}
-    }
-
-	for (uint32_t l = 0; l < leaves.size(); ++l) {
-		for (uint32_t i = 0; i < leaves[l]->prim_index.size(); ++i) {
-			if (oct_primitives[leaves[l]->prim_index[i]]->Intersect(ray, isect)) {
-				return true;
-			}
-		}
-	}
-    return false;
+    return root->Intersect(ray, isect);
 }
 
 bool OctreeAccel::IntersectP(const Ray &ray) const {
@@ -96,26 +92,48 @@ bool OctreeAccel::IntersectP(const Ray &ray) const {
 }
 
 OctreeNode *OctreeAccel::makeNode(BBox b, unsigned int maxDepth) {
-	std::cout << maxDepth << std::endl;
+	if (maxDepth >= 5) {
+		std::cout << "depth = " << maxDepth << std::endl;
+		//std::cout << b.pMin.x << ", " << b.pMin.y << ", " << b.pMin.z << std::endl;
+		//std::cout << b.pMax.x << ", " << b.pMax.y << ", " << b.pMax.z << std::endl;
+	}
 	OctreeNode *node = new OctreeNode;
+    node->size = 0;
 	node->bounds = b;
-	if (maxDepth) {
+
+	// find content in the node
+	int content = 0;
+    for (const auto &p: oct_primitives) {
+        if (b.Overlaps( p->WorldBound() )) {
+        	content++;
+        }
+    }
+
+	if (maxDepth && content > 16) {
+	    // create 8 children
 		node->isLeaf = false;
-		node->isEmpty = true;
+		// does the node contain anything
+		node->isEmpty = false;
 		for (int i = 0; i < 8; ++i) {
-			node->c[i] = makeNode(subBoxIndex(b, i), maxDepth - 1);
-			node->isEmpty &= node->c[i]->isEmpty;
+			OctreeNode *child = makeNode(subBoxIndex(b, i), maxDepth - 1);
+			node->c[i] = child;
+			node->size += child->size;
 		}
 	}
 	else {
 		node->isLeaf = true;
-	    for (uint32_t i = 0; i < oct_primitives.size(); ++i) {
-	        BBox pbb = oct_primitives[i]->WorldBound();
-	        if (pbb.Overlaps(b)) {
-	    		node->prim_index.push_back(i);
+	    for (const auto &p: oct_primitives) {
+	        if (b.Overlaps(p->WorldBound())) {
+	    		node->prims.push_back(p);
 	        }
 	    }
-	    node->isEmpty = (node->prim_index.size() == 0);
+	    node->isEmpty = (node->prims.size() == 0);
+	    node->size = 1;
+	}
+
+
+	if (maxDepth >= 5) {
+		std::cout << "contains " << node->size << " nodes" << std::endl;
 	}
 	return node;
 }
