@@ -50,8 +50,22 @@ Sphere::Sphere(const Transform *o2w, const Transform *w2o, bool ro,
 
 
 BBox Sphere::ObjectBound() const {
-    return BBox(Point(-radius, -radius, zmin),
-                Point( radius,  radius, zmax));
+	if (phiMax < M_PI / 2.0) {
+		return BBox( Point(0, 0, zmin),
+                Point( radius, sin(phiMax) * radius, zmax) );
+	}
+	else if (phiMax < M_PI) {
+		return BBox( Point(cos(phiMax) * radius, 0, zmin ),
+                Point( radius, radius, zmax) );
+	}
+	else if (phiMax <  3.0 * M_PI / 2.0) {
+		return BBox( Point(-radius, -sin(phiMax) * radius, zmin ),
+                Point( radius, radius, zmax ) );
+	}
+	else {
+		return BBox( Point( -radius, -radius, zmin ),
+                Point( radius, radius, zmax ) );
+	}
 }
 
 
