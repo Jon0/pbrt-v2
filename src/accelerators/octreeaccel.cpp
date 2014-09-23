@@ -9,6 +9,7 @@
 
 #include "intersection.h"
 #include "octreeaccel.h"
+#include "paramset.h"
 
 /*
  * map integers 0-7 to 8 octree directions
@@ -70,7 +71,9 @@ bool OctreeNode::Intersect(const Ray &ray, Intersection *isect) const {
 	return hasHit;
 }
 
-OctreeAccel::OctreeAccel(const vector<Reference<Primitive> > &primitives) {
+OctreeAccel::OctreeAccel(const vector<Reference<Primitive> > &primitives, uint md, uint mc) {
+	maxdepth = md;
+	minchild = mc;
     for (uint32_t i = 0; i < primitives.size(); ++i)
     	primitives[i]->FullyRefine(oct_primitives);
 
@@ -79,7 +82,7 @@ OctreeAccel::OctreeAccel(const vector<Reference<Primitive> > &primitives) {
         BBox b = oct_primitives[i]->WorldBound();
         bounds = Union(bounds, b);
     }
-    root = makeNode(oct_primitives, bounds, 10);
+    root = makeNode(oct_primitives, bounds, maxdepth);
     std::cout << "octree contains " << root->size << " nodes" << std::endl;
 }
 
@@ -107,7 +110,7 @@ OctreeNode *OctreeAccel::makeNode(const prim_array &pool, BBox b, unsigned int m
         }
     }
 
-	if (maxDepth && content.size() > 8) {
+	if (maxDepth && content.size() > minchild) {
 	    // create 8 children
 		node->isLeaf = false;
 		// does the node contain anything
@@ -133,5 +136,8 @@ OctreeNode *OctreeAccel::makeNode(const prim_array &pool, BBox b, unsigned int m
 
 OctreeAccel *CreateOctreeAccelerator(const vector<Reference<Primitive> > &prims,
         const ParamSet &ps) {
-    return new OctreeAccel(prims);
+	uint maxdepth = ps.FindOneInt("maxdepth", 10);
+	uint minchild = ps.FindOneInt("minchild", 8);
+
+    return new OctreeAccel(prims, maxdepth, minchild);
 }

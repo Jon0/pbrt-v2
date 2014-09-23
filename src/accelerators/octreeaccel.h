@@ -26,7 +26,7 @@ public:
 
 class OctreeAccel : public Aggregate {
 public:
-	OctreeAccel(const vector<Reference<Primitive> > &);
+	OctreeAccel(const vector<Reference<Primitive> > &, uint, uint);
 	virtual ~OctreeAccel();
 
 	BBox WorldBound() const {
@@ -41,6 +41,7 @@ public:
 	bool IntersectP(const Ray &ray) const;
 
 private:
+	uint maxdepth, minchild;
 	prim_array oct_primitives;
     OctreeNode *root;
     OctreeNode *makeNode(const prim_array &, BBox, unsigned int);

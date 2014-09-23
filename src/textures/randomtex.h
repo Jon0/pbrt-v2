@@ -14,25 +14,32 @@
 
 class RandomTexture : public Texture<Spectrum> {
 public:
-	RandomTexture(TextureMapping3D *m) {
+	RandomTexture(TextureMapping3D *m, float dense, float var, float dr) {
 		mapping = m;
+
+		// settings
+		density = dense;
+		variance = var;
+		dark = dr;
+
+		// colours
+        R = Point(204.0/255.0, 98.0/255.0, 86.0/255.0);
+        G = Point(95.0/255.0, 248.0/255.0, 122.0/255.0);
+        B = Point(89.0/255.0, 102.0/255.0, 249.0/255.0);
 	}
+
 	virtual ~RandomTexture() {}
 
 	Spectrum Evaluate(const DifferentialGeometry &dg) const {
         Vector dpdx, dpdy;
         Point P = mapping->Map(dg, &dpdx, &dpdy);
 
-        float density = 25.0f;
-        float ft = 1.15f + sin( density * FBm(P, dpdx, dpdy, 0.8, 7) ) * 0.15;
+        float ft = variance + 1.0f + sin( density * FBm(P, dpdx, dpdy, 0.8, 7) ) * variance;
         float fu = (density + pow(ft, 9)) * FBm(P, dpdx, dpdy, 0.66, 9) * 1;
         float fv = (density + pow(ft, 9)) * FBm(P, dpdx, dpdy, 0.57, 16) * 3;
-        float x = 0.08 + fabs(sin(fu)) * 0.92;
+        float x = dark + fabs(sin(fu)) * (1-dark);
 
-        Point R = Point(204.0/255.0, 98.0/255.0, 86.0/255.0);
-        Point G = Point(95.0/255.0, 248.0/255.0, 122.0/255.0);
-        Point B = Point(89.0/255.0, 102.0/255.0, 249.0/255.0);
-
+        //  make out of phase sine waves
         float fr = 0.45 + cos(fv) * 0.44;
         float fg = (0.5 + cos(fv + 2.0f) * 0.48) * (1-fr);
         float fb = sqrt(1 - (fr*fr + fg*fg));
@@ -45,9 +52,14 @@ public:
 		rgb[2] = Q.z;
 		Spectrum s;
 		return s.FromRGB(rgb);
-		//return s.FromXYZ(rgb);
     }
 private:
+	float density, variance, dark;
+    Point R;
+    Point G;
+    Point B;
+
+
 	TextureMapping3D *mapping;
 };
 
