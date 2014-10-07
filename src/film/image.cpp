@@ -217,6 +217,10 @@ void ImageFilm::UpdateDisplay(int x0, int y0, int x1, int y1,
     float splatScale) {
 }
 
+string ImageFilm::getFilename() {
+	return filename;
+}
+
 
 ImageFilm *CreateImageFilm(const ParamSet &params, Filter *filter) {
     // Intentionally use FindOneString() rather than FindOneFilename() here

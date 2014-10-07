@@ -29,10 +29,10 @@
 
  */
 
-
 // core/api.cpp*
 #include "stdafx.h"
 #include "api.h"
+#include "differential.h"
 #include "parallel.h"
 #include "paramset.h"
 #include "spectrum.h"
@@ -167,7 +167,7 @@ private:
 struct RenderOptions {
     // RenderOptions Public Methods
     RenderOptions();
-    Scene *MakeScene();
+    Scene *MakeScene(vector<Reference<Primitive> > &);
     Camera *MakeCamera() const;
     Renderer *MakeRenderer() const;
 
@@ -188,11 +188,14 @@ struct RenderOptions {
     string CameraName;
     ParamSet CameraParams;
     TransformSet CameraToWorld;
+    Camera *cameraObj;
     vector<Light *> lights;
     vector<Reference<Primitive> > primitives;
+    vector<Reference<Primitive> > diffprimitives;
     mutable vector<VolumeRegion *> volumeRegions;
     map<string, vector<Reference<Primitive> > > instances;
     vector<Reference<Primitive> > *currentInstance;
+    bool useDifferential;
 };
 
 
@@ -209,6 +212,7 @@ RenderOptions::RenderOptions() {
     VolIntegratorName = "emission";
     CameraName = "perspective";
     currentInstance = NULL;
+    useDifferential = true; // default to true for now
 }
 
 
@@ -997,6 +1001,7 @@ void pbrtShape(const string &name, const ParamSet &params) {
     VERIFY_WORLD("Shape");
     Reference<Primitive> prim;
     AreaLight *area = NULL;
+    bool isVirtual = (params.FindOneInt("virtual", 0) > 0);
     if (!curTransform.IsAnimated()) {
         // Create primitive for static shape
         Transform *obj2world, *world2obj;
@@ -1057,7 +1062,14 @@ void pbrtShape(const string &name, const ParamSet &params) {
     }
 
     else {
-        renderOptions->primitives.push_back(prim);
+        if (isVirtual) {
+        	// add to both sets
+        	renderOptions->diffprimitives.push_back(prim);
+        	renderOptions->primitives.push_back(prim);
+        }
+        else {
+            renderOptions->diffprimitives.push_back(prim);
+        }
         if (area != NULL) {
             renderOptions->lights.push_back(area);
         }
@@ -1150,6 +1162,7 @@ void pbrtObjectInstance(const string &name) {
     Reference<Primitive> prim =
         new TransformedPrimitive(in[0], animatedWorldToInstance);
     renderOptions->primitives.push_back(prim);
+    renderOptions->diffprimitives.push_back(prim);
 }
 
 
@@ -1168,8 +1181,15 @@ void pbrtWorldEnd() {
 
     // Create scene and render
     Renderer *renderer = renderOptions->MakeRenderer();
-    Scene *scene = renderOptions->MakeScene();
-    if (scene && renderer) renderer->Render(scene);
+    Scene *scene = renderOptions->MakeScene(renderOptions->primitives);
+    if (renderOptions->useDifferential) {
+    	Scene *scenediff = renderOptions->MakeScene(renderOptions->diffprimitives);
+    	Differential d;
+    	d.process(renderer, renderOptions->cameraObj, scene, scenediff);
+    }
+    else {
+    	if (scene && renderer) renderer->Render(scene);
+    }
     TasksCleanup();
     delete renderer;
     delete scene;
@@ -1189,7 +1209,7 @@ void pbrtWorldEnd() {
 }
 
 
-Scene *RenderOptions::MakeScene() {
+Scene *RenderOptions::MakeScene(vector<Reference<Primitive> > &primitives) {
     // Initialize _volumeRegion_ from volume region(s)
     VolumeRegion *volumeRegion;
     if (volumeRegions.size() == 0)
@@ -1206,16 +1226,16 @@ Scene *RenderOptions::MakeScene() {
         Severe("Unable to create \"bvh\" accelerator.");
     Scene *scene = new Scene(accelerator, lights, volumeRegion);
     // Erase primitives, lights, and volume regions from _RenderOptions_
-    primitives.erase(primitives.begin(), primitives.end());
-    lights.erase(lights.begin(), lights.end());
-    volumeRegions.erase(volumeRegions.begin(), volumeRegions.end());
+    //primitives.erase(primitives.begin(), primitives.end());
+    //lights.erase(lights.begin(), lights.end());
+    //volumeRegions.erase(volumeRegions.begin(), volumeRegions.end());
     return scene;
 }
 
 
 Renderer *RenderOptions::MakeRenderer() const {
     Renderer *renderer = NULL;
-    Camera *camera = MakeCamera();
+    Camera *camera = renderOptions->cameraObj = MakeCamera();
     if (RendererName == "metropolis") {
         renderer = CreateMetropolisRenderer(RendererParams, camera);
         RendererParams.ReportUnused();

@@ -59,7 +59,6 @@ include_directories(
 
 add_definitions(-std=c++11)
 
-
 # build and link
 add_library (pbrt ${SRC_FILES})
 target_link_libraries (

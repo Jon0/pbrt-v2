@@ -36,6 +36,8 @@
 #ifndef PBRT_CORE_FILM_H
 #define PBRT_CORE_FILM_H
 
+#include <string>
+
 // core/film.h*
 #include "pbrt.h"
 
@@ -55,6 +57,8 @@ public:
                                 int *ystart, int *yend) const = 0;
     virtual void UpdateDisplay(int x0, int y0, int x1, int y1, float splatScale = 1.f);
     virtual void WriteImage(float splatScale = 1.f) = 0;
+
+    virtual string getFilename() = 0;
 
     // Film Public Data
     const int xResolution, yResolution;

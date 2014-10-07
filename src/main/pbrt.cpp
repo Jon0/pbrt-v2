@@ -29,6 +29,7 @@
 
  */
 
+#include <iostream>
 
 // main/pbrt.cpp*
 #include "stdafx.h"
