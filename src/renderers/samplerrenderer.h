@@ -49,6 +49,7 @@ public:
                     VolumeIntegrator *vi, bool visIds);
     ~SamplerRenderer();
     void Render(const Scene *scene);
+    void RenderToFilm(const Scene *scene, Film &film);
     Spectrum Li(const Scene *scene, const RayDifferential &ray,
         const Sample *sample, RNG &rng, MemoryArena &arena,
         Intersection *isect = NULL, Spectrum *T = NULL) const;
@@ -69,12 +70,12 @@ private:
 class SamplerRendererTask : public Task {
 public:
     // SamplerRendererTask Public Methods
-    SamplerRendererTask(const Scene *sc, Renderer *ren, Camera *c,
-                        ProgressReporter &pr, Sampler *ms, Sample *sam, 
+    SamplerRendererTask(const Scene *sc, Renderer *ren, Camera *c, Film *f,
+                        ProgressReporter &pr, Sampler *ms, Sample *sam,
                         bool visIds, int tn, int tc)
       : reporter(pr)
     {
-        scene = sc; renderer = ren; camera = c; mainSampler = ms;
+        scene = sc; renderer = ren; camera = c; film = f; mainSampler = ms;
         origSample = sam; visualizeObjectIds = visIds; taskNum = tn; taskCount = tc;
     }
     void Run();
@@ -83,6 +84,7 @@ private:
     const Scene *scene;
     const Renderer *renderer;
     Camera *camera;
+    Film *film;
     Sampler *mainSampler;
     ProgressReporter &reporter;
     Sample *origSample;

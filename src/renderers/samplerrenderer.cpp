@@ -54,7 +54,7 @@ static uint32_t hash(char *key, uint32_t len)
     hash ^= (hash >> 11);
     hash += (hash << 15);
     return hash;
-} 
+}
 
 // SamplerRendererTask Definitions
 void SamplerRendererTask::Run() {
@@ -141,7 +141,7 @@ void SamplerRendererTask::Run() {
             for (int i = 0; i < sampleCount; ++i)
             {
                 PBRT_STARTED_ADDING_IMAGE_SAMPLE(&samples[i], &rays[i], &Ls[i], &Ts[i]);
-                camera->film->AddSample(samples[i], Ls[i]);
+                film->AddSample(samples[i], Ls[i], rays[i].time);
                 PBRT_FINISHED_ADDING_IMAGE_SAMPLE();
             }
         }
@@ -151,7 +151,7 @@ void SamplerRendererTask::Run() {
     }
 
     // Clean up after _SamplerRendererTask_ is done with its image region
-    camera->film->UpdateDisplay(sampler->xPixelStart,
+    film->UpdateDisplay(sampler->xPixelStart,
         sampler->yPixelStart, sampler->xPixelEnd+1, sampler->yPixelEnd+1);
     delete sampler;
     delete[] samples;
@@ -162,7 +162,6 @@ void SamplerRendererTask::Run() {
     reporter.Update();
     PBRT_FINISHED_RENDERTASK(taskNum);
 }
-
 
 
 // SamplerRenderer Method Definitions
@@ -206,9 +205,9 @@ void SamplerRenderer::Render(const Scene *scene) {
     ProgressReporter reporter(nTasks, "Rendering");
     vector<Task *> renderTasks;
     for (int i = 0; i < nTasks; ++i)
-        renderTasks.push_back(new SamplerRendererTask(scene, this, camera,
-                                                      reporter, sampler, sample, 
-                                                      visualizeObjectIds, 
+        renderTasks.push_back(new SamplerRendererTask(scene, this, camera, camera->film,
+                                                      reporter, sampler, sample,
+                                                      visualizeObjectIds,
                                                       nTasks-1-i, nTasks));
     EnqueueTasks(renderTasks);
     WaitForAllTasks();
@@ -219,6 +218,41 @@ void SamplerRenderer::Render(const Scene *scene) {
     // Clean up after rendering and store final image
     delete sample;
     camera->film->WriteImage();
+}
+
+void SamplerRenderer::RenderToFilm(const Scene *scene, Film &film) {
+    PBRT_FINISHED_PARSING();
+    // Allow integrators to do preprocessing for the scene
+    PBRT_STARTED_PREPROCESSING();
+    surfaceIntegrator->Preprocess(scene, camera, this);
+    volumeIntegrator->Preprocess(scene, camera, this);
+    PBRT_FINISHED_PREPROCESSING();
+    PBRT_STARTED_RENDERING();
+    // Allocate and initialize _sample_
+    Sample *sample = new Sample(sampler, surfaceIntegrator,
+                                volumeIntegrator, scene);
+
+    // Create and launch _SamplerRendererTask_s for rendering image
+
+    // Compute number of _SamplerRendererTask_s to create for rendering
+    int nPixels = camera->film->xResolution * camera->film->yResolution;
+    int nTasks = max(32 * NumSystemCores(), nPixels / (16*16));
+    nTasks = RoundUpPow2(nTasks);
+    ProgressReporter reporter(nTasks, "Rendering");
+    vector<Task *> renderTasks;
+    for (int i = 0; i < nTasks; ++i)
+        renderTasks.push_back(new SamplerRendererTask(scene, this, camera, &film,
+                                                      reporter, sampler, sample,
+                                                      visualizeObjectIds,
+                                                      nTasks-1-i, nTasks));
+    EnqueueTasks(renderTasks);
+    WaitForAllTasks();
+    for (uint32_t i = 0; i < renderTasks.size(); ++i)
+        delete renderTasks[i];
+    reporter.Done();
+    PBRT_FINISHED_RENDERING();
+    // Clean up after rendering and store final image
+    delete sample;
 }
 
 

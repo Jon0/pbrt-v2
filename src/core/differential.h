@@ -20,12 +20,9 @@ public:
 	void process(Renderer *, Camera *, Scene *, Scene *);
 
 private:
-	void DiffWriteImage(string, RGBSpectrum *);
-	void findDifferential();
-	RGBSpectrum *get(RGBSpectrum *, int, int);
-
-	int width, height;
-	RGBSpectrum *r1, *r2;
+	void DiffWriteImage(string, float *, int width, int height);
+	void findDifferential(Film *, Film *);
+	RGBSpectrum *get(RGBSpectrum *, int, int, int);
 };
 
 #endif /* DIFFERENTIAL_H_ */

@@ -73,9 +73,9 @@ ImageFilm::ImageFilm(int xres, int yres, Filter *filt, const float crop[4],
     }
 }
 
-
 void ImageFilm::AddSample(const CameraSample &sample,
-                          const Spectrum &L) {
+                          const Spectrum &L,
+                          float depth) {
     // Compute sample's raster extent
     float dimageX = sample.imageX - 0.5f;
     float dimageY = sample.imageY - 0.5f;
@@ -119,6 +119,7 @@ void ImageFilm::AddSample(const CameraSample &sample,
 
             // Update pixel values with filtered sample contribution
             Pixel &pixel = (*pixels)(x - xPixelStart, y - yPixelStart);
+            pixel.depth = min(pixel.depth, depth); // no parallel!!
             if (!syncNeeded) {
                 pixel.Lxyz[0] += filterWt * xyz[0];
                 pixel.Lxyz[1] += filterWt * xyz[1];
@@ -131,11 +132,11 @@ void ImageFilm::AddSample(const CameraSample &sample,
                 AtomicAdd(&pixel.Lxyz[1], filterWt * xyz[1]);
                 AtomicAdd(&pixel.Lxyz[2], filterWt * xyz[2]);
                 AtomicAdd(&pixel.weightSum, filterWt);
+
             }
         }
     }
 }
-
 
 void ImageFilm::Splat(const CameraSample &sample, const Spectrum &L) {
     if (L.HasNaNs()) {
@@ -174,6 +175,13 @@ void ImageFilm::GetPixelExtent(int *xstart, int *xend,
     *yend   = yPixelStart + yPixelCount;
 }
 
+void ImageFilm::getPixRGB(int x, int y, float rgb[3]) {
+	XYZToRGB((*pixels)(x, y).Lxyz, rgb);
+}
+
+float ImageFilm::getPixDepth(int x, int y) {
+	return (*pixels)(x, y).depth;
+}
 
 void ImageFilm::WriteImage(float splatScale) {
     // Convert image to RGB and compute final pixel values
@@ -219,6 +227,10 @@ void ImageFilm::UpdateDisplay(int x0, int y0, int x1, int y1,
 
 string ImageFilm::getFilename() {
 	return filename;
+}
+
+Film *ImageFilm::clone() {
+	return new ImageFilm(xResolution, yResolution, filter, cropWindow, filename, false);
 }
 
 

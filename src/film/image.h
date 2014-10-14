@@ -55,12 +55,17 @@ public:
         delete[] filterTable;
     }
     void AddSample(const CameraSample &sample, const Spectrum &L);
+    void AddSample(const CameraSample &sample, const Spectrum &L, float depth = 0.0f);
     void Splat(const CameraSample &sample, const Spectrum &L);
     void GetSampleExtent(int *xstart, int *xend, int *ystart, int *yend) const;
     void GetPixelExtent(int *xstart, int *xend, int *ystart, int *yend) const;
     void WriteImage(float splatScale);
     void UpdateDisplay(int x0, int y0, int x1, int y1, float splatScale);
+
+    void getPixRGB(int x, int y, float rgb[3]);
+    float getPixDepth(int x, int y);
     string getFilename();
+    Film *clone();
 
 private:
     // ImageFilm Private Data
@@ -77,6 +82,7 @@ private:
         float weightSum;
         float splatXYZ[3];
         float pad;
+        float depth;
     };
     BlockedArray<Pixel> *pixels;
     float *filterTable;

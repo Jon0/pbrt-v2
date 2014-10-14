@@ -165,7 +165,7 @@ static void SmallStep(RNG &rng, MLTSample *sample, int maxDepth,
         mutate(rng, &ls.lightSample.uPos[0]);
         mutate(rng, &ls.lightSample.uPos[1]);
     }
-    
+
     if (bidirectional) {
         mutate(rng, &sample->lightNumSample);
         for (int i = 0; i < 5; ++i)
@@ -333,7 +333,7 @@ Spectrum MetropolisRenderer::PathL(const MLTSample &sample,
             lightWt *= AbsDot(Normalize(Nl), lightRay.d) / (lightPdf * lightRayPdf);
             uint32_t lightLength = GeneratePath(RayDifferential(lightRay), lightWt,
                 scene, arena, sample.lightPathSamples, lightPath, NULL, NULL);
-            
+
             return Lbidir(scene, cameraPath, cameraLength, lightPath, lightLength,
                 arena, sample.lightingSamples, rng, sample.cameraSample.time,
                 lightDistribution, escapedRay, escapedAlpha);
@@ -370,7 +370,7 @@ Spectrum MetropolisRenderer::Lpath(const Scene *scene,
                                                                   &lightPdf);
             const Light *light = scene->lights[lightNum];
             PBRT_MLT_STARTED_ESTIMATE_DIRECT();
-            
+
             Ld = vc.alpha *
                  EstimateDirect(scene, this, arena, light, pc, nc, vc.wPrev,
                                 vc.isect.rayEpsilon, time, vc.bsdf, rng,
@@ -431,7 +431,7 @@ Spectrum MetropolisRenderer::Lbidir(const Scene *scene,
                                                                   &lightPdf);
             const Light *light = scene->lights[lightNum];
             PBRT_MLT_STARTED_ESTIMATE_DIRECT();
-            
+
             Ld = vc.alpha *
                  EstimateDirect(scene, this, arena, light, pc, nc, vc.wPrev,
                                 vc.isect.rayEpsilon, time, vc.bsdf, rng,
@@ -552,7 +552,7 @@ void MetropolisRenderer::Render(const Scene *scene) {
                 nDirectTasks = RoundUpPow2(nDirectTasks);
                 ProgressReporter directProgress(nDirectTasks, "Direct Lighting");
                 for (int i = 0; i < nDirectTasks; ++i)
-                    directTasks.push_back(new SamplerRendererTask(scene, this, camera, directProgress,
+                    directTasks.push_back(new SamplerRendererTask(scene, this, camera, camera->film, directProgress,
                                                                   &sampler, sample, false, i, nDirectTasks));
                 std::reverse(directTasks.begin(), directTasks.end());
                 EnqueueTasks(directTasks);
@@ -636,6 +636,8 @@ void MetropolisRenderer::Render(const Scene *scene) {
     camera->film->WriteImage();
     PBRT_MLT_FINISHED_RENDERING();
 }
+
+void MetropolisRenderer::RenderToFilm(const Scene *scene, Film &film) {}
 
 
 inline float I(const Spectrum &L) {

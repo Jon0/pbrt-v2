@@ -51,6 +51,7 @@ public:
         float time, const string &filename);
     ~CreateRadianceProbes();
     void Render(const Scene *scene);
+    void RenderToFilm(const Scene *scene, Film &film);
     Spectrum Li(const Scene *scene, const RayDifferential &ray,
         const Sample *sample, RNG &rng, MemoryArena &arena, Intersection *isect,
         Spectrum *T) const;

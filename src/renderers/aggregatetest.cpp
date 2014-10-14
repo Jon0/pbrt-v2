@@ -118,6 +118,7 @@ void AggregateTest::Render(const Scene *scene) {
     prog.Done();
 }
 
+void AggregateTest::RenderToFilm(const Scene *scene, Film &film) {}
 
 Spectrum AggregateTest::Li(const Scene *scene, const RayDifferential &ray,
         const Sample *sample, RNG &rng, MemoryArena &arena, Intersection *isect,

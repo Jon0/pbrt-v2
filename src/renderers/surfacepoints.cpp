@@ -168,6 +168,7 @@ void SurfacePointsRenderer::Render(const Scene *scene) {
     }
 }
 
+void SurfacePointsRenderer::RenderToFilm(const Scene *scene, Film &film) {}
 
 void SurfacePointTask::Run() {
     // Declare common variables for _SurfacePointTask::Run()_

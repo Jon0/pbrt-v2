@@ -45,6 +45,7 @@ public:
     // Renderer Interface
     virtual ~Renderer();
     virtual void Render(const Scene *scene) = 0;
+    virtual void RenderToFilm(const Scene *scene, Film &film) = 0;
     virtual Spectrum Li(const Scene *scene, const RayDifferential &ray,
         const Sample *sample, RNG &rng, MemoryArena &arena,
         Intersection *isect = NULL, Spectrum *T = NULL) const = 0;

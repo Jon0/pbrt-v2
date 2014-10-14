@@ -60,6 +60,7 @@ public:
                           const string &fn)
         : minDist(md), time(t), pCamera(pc), filename(fn) { }
     void Render(const Scene *scene);
+    void RenderToFilm(const Scene *scene, Film &film);
     Spectrum Li(const Scene *scene, const RayDifferential &ray,
         const Sample *sample, RNG &rng, MemoryArena &arena,
         Intersection *isect, Spectrum *T) const;
