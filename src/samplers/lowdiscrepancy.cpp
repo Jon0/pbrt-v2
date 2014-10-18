@@ -28,7 +28,7 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
  */
-
+#include <iostream>
 
 // samplers/lowdiscrepancy.cpp*
 #include "stdafx.h"
@@ -85,6 +85,7 @@ LDSampler *CreateLowDiscrepancySampler(const ParamSet &params, const Film *film,
     int xstart, xend, ystart, yend;
     film->GetSampleExtent(&xstart, &xend, &ystart, &yend);
     int nsamp = params.FindOneInt("pixelsamples", 4);
+	std::cout << nsamp << std::endl;
     if (PbrtOptions.quickRender) nsamp = 1;
     return new LDSampler(xstart, xend, ystart, yend, nsamp,
         camera->shutterOpen, camera->shutterClose);

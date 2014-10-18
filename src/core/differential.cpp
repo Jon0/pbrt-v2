@@ -7,9 +7,14 @@
 
 #include <iostream>
 
+#include "aggregatetest.h"
 #include "differential.h"
+#include "emission.h"
 #include "image.h"
 #include "imageio.h"
+#include "adaptive.h"
+#include "lowdiscrepancy.h"
+#include "samplerrenderer.h"
 
 using namespace std;
 
@@ -19,7 +24,9 @@ void Differential::DiffWriteImage(string fn, float *rgb, int width, int height) 
     		width, height, 0, 0);
 }
 
-Differential::Differential() {}
+Differential::Differential() {
+	maskSamples = 32;
+}
 
 Differential::~Differential() {}
 
@@ -28,17 +35,53 @@ Differential::~Differential() {}
  * s2 -- local only
  * s3 -- virtual only
  */
-void Differential::process(Renderer *renderer, Camera *c, Scene *s1, Scene *s2, Scene *s3) {
+void Differential::process(string fn, Renderer *renderer, Camera *c, Scene *s1, Scene *s2, Scene *s3) {
 	if ( !(renderer && s1 && s2) ) {
 		return;
 	}
-	Film *f1 = c->film->clone();
-	Film *f2 = c->film->clone();
-	Film *f3 = c->film->clone();
+	photoImage = ReadImage(fn, &width, &height);
+
+
+	// create 3 films
+	Film *f1 = c->film->clone(width, height);
+	Film *f2 = c->film->clone(width, height);
+	Film *f3 = c->film->clone(width, height);
+	Film *f4 = c->film->clone(width, height);
+
+	ParamSet pixel64;
+	int value = maskSamples;
+	pixel64.AddInt("pixelsamples", &value, 1);
+
+
+
+    // Create mask renderer
+    Sampler *sampler = CreateLowDiscrepancySampler(pixel64, f3, c);
+    SurfaceIntegrator *surfaceIntegrator = new MaskSurfaceIntegrator();
+    VolumeIntegrator *volumeIntegrator = CreateEmissionVolumeIntegrator(ParamSet());
+    Renderer *masker1 = new SamplerRenderer(sampler, c, surfaceIntegrator,
+                                   volumeIntegrator, false);
+
+    sampler = CreateLowDiscrepancySampler(pixel64, f4, c);
+    surfaceIntegrator = new MaskSurfaceIntegrator();
+    volumeIntegrator = CreateEmissionVolumeIntegrator(ParamSet());
+    Renderer *masker2 = new SamplerRenderer(sampler, c, surfaceIntegrator,
+    								volumeIntegrator, false);
+
+
+    //masker1->Render(s3);
+
+    // create outputs
 	renderer->RenderToFilm(s1, *f1);
 	renderer->RenderToFilm(s2, *f2);
-	renderer->RenderToFilm(s3, *f3);
-	findDifferential(f1, f2, f3);
+	masker1->RenderToFilm(s3, *f3);
+	masker2->RenderToFilm(s2, *f4);
+	findDifferential(f1, f2, f3, f4);
+
+
+
+
+
+
 }
 
 /*
@@ -46,16 +89,14 @@ void Differential::process(Renderer *renderer, Camera *c, Scene *s1, Scene *s2, 
  * film f2 -- local only
  * film f3 -- virtual only
  */
-void Differential::findDifferential(Film *f1, Film *f2, Film *f3) {
-	int width, height;
-	RGBSpectrum *photoImage = ReadImage("in.exr", &width, &height);
+void Differential::findDifferential(Film *f1, Film *f2, Film *f3, Film *f4) {
 
-	//int width = f1->xResolution;
-	//int height = f1->yResolution;
+	width = f1->xResolution;
+	height = f1->yResolution;
 	float *rgb = new float[3 * width * height];
 
 	// temp values
-	float rgbF1[3], rgbF2[3], rgbF3[3];
+	float rgbF1[3], rgbF2[3], rgbF3[3], rgbF4[3];
 
 	for (int x = 0; x < width; ++x) {
 		for (int y = 0; y < height; ++y) {
@@ -64,22 +105,18 @@ void Differential::findDifferential(Film *f1, Film *f2, Film *f3) {
 			f1->getPixRGB(x, y, rgbF1);
 			f2->getPixRGB(x, y, rgbF2);
 			f3->getPixRGB(x, y, rgbF3);
-
-			// depth values
-			//float d1 = f1->getPixDepth(x, y);
-			//float d2 = f1->getPixDepth(x, y);
+			f4->getPixRGB(x, y, rgbF4);
 
 			float photoPixels[3];
+			//photoPixels[0] = 1.0;
+			//photoPixels[1] = 1.0;
+			//photoPixels[2] = 1.0;
 			photoImage[y * width + x].ToRGB(photoPixels);
 
-			float geomWeight = 0.0f;
-			float localWeight = 0.0f;
-			if (rgbF3[0] > 0.0) {
-				geomWeight = 1.0f;
-			}
-			else {
-				localWeight = 1.0f;
-			}
+			float geomWeight = rgbF3[0] / (float)maskSamples;
+			float localWeight = rgbF4[0] / (float)maskSamples;
+			if (geomWeight > 1.0f) geomWeight = 1.0f;
+			if (localWeight > 1.0f) localWeight = 1.0f;
 			float nongeomWeight = 1.0f - geomWeight;
 			float nonlocalWeight = 1.0f - localWeight;
 
@@ -89,11 +126,13 @@ void Differential::findDifferential(Film *f1, Film *f2, Film *f3) {
 				out[i] += geomWeight * rgbF1[i];
 				out[i] += nonlocalWeight * nongeomWeight * photoPixels[i];
 				out[i] += localWeight * nongeomWeight * photoPixels[i] * d;
+				//out[i] = rgbF3[i];
 			}
+
 		}
 	}
 
-	DiffWriteImage("test.exr", rgb, width, height);
+	DiffWriteImage(f1->getFilename(), rgb, width, height);
 
     delete[] rgb;
 }

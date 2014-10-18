@@ -233,6 +233,10 @@ Film *ImageFilm::clone() {
 	return new ImageFilm(xResolution, yResolution, filter, cropWindow, filename, false);
 }
 
+Film *ImageFilm::clone(int xr, int yr) {
+	return new ImageFilm(xr, yr, filter, cropWindow, filename, false);
+}
+
 
 ImageFilm *CreateImageFilm(const ParamSet &params, Filter *filter) {
     // Intentionally use FindOneString() rather than FindOneFilename() here

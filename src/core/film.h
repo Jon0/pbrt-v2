@@ -63,6 +63,7 @@ public:
     virtual float getPixDepth(int x, int y) = 0;
     virtual string getFilename() = 0;
     virtual Film *clone() = 0;
+    virtual Film *clone(int, int) = 0;
 
     // Film Public Data
     const int xResolution, yResolution;

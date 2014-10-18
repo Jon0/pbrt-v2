@@ -66,6 +66,7 @@ public:
     float getPixDepth(int x, int y);
     string getFilename();
     Film *clone();
+    Film *clone(int, int);
 
 private:
     // ImageFilm Private Data

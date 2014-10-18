@@ -173,6 +173,7 @@ struct RenderOptions {
 
     // RenderOptions Public Data
     float transformStartTime, transformEndTime;
+    string photoFile;
     string FilterName;
     ParamSet FilterParams;
     string FilmName;
@@ -204,6 +205,7 @@ RenderOptions::RenderOptions() {
     // RenderOptions Constructor Implementation
     transformStartTime = 0.f;
     transformEndTime = 1.f;
+    photoFile = "in.exr";
     FilterName = "box";
     FilmName = "image";
     SamplerName = "lowdiscrepancy";
@@ -1190,7 +1192,7 @@ void pbrtWorldEnd() {
     	Scene *scenediff1 = renderOptions->MakeScene(renderOptions->localprimitives);
     	Scene *scenediff2 = renderOptions->MakeScene(renderOptions->virtualprimitives);
     	Differential d;
-    	d.process(renderer, renderOptions->cameraObj, scene, scenediff1, scenediff2);
+    	d.process(renderOptions->photoFile, renderer, renderOptions->cameraObj, scene, scenediff1, scenediff2);
     }
     else {
     	if (scene && renderer) renderer->Render(scene);

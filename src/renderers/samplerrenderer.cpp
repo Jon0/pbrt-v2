@@ -29,6 +29,7 @@
 
  */
 
+#include <iostream>
 
 // renderers/samplerrenderer.cpp*
 #include "stdafx.h"
