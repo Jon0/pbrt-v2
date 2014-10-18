@@ -17,11 +17,11 @@ public:
 	Differential();
 	virtual ~Differential();
 
-	void process(Renderer *, Camera *, Scene *, Scene *);
+	void process(Renderer *, Camera *, Scene *, Scene *, Scene *);
 
 private:
 	void DiffWriteImage(string, float *, int width, int height);
-	void findDifferential(Film *, Film *);
+	void findDifferential(Film *, Film *, Film *);
 	RGBSpectrum *get(RGBSpectrum *, int, int, int);
 };
 

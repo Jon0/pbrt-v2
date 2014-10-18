@@ -20,11 +20,11 @@ Shape "disk" "float radius" [.25]
 AttributeEnd
 
 Material "matte" "color Kd" [.4 .42 .4]
-Shape "trianglemesh" "integer virtual" [1] "point P" [ -1 0 -1 1 0 -1 1 0 1 -1 0 1 ]
+Shape "trianglemesh" "point P" [ -1 0 -1 1 0 -1 1 0 1 -1 0 1 ]
 	"integer indices" [ 0 1 2 2 3 0] 
 
 Material "measured" "string filename" "brdfs/mystique.brdf"
 
-Include "geometry/bunny.pbrt"
+Include "geometry/virtualbunny.pbrt"
 
 WorldEnd 

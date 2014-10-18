@@ -191,7 +191,8 @@ struct RenderOptions {
     Camera *cameraObj;
     vector<Light *> lights;
     vector<Reference<Primitive> > primitives;
-    vector<Reference<Primitive> > diffprimitives;
+    vector<Reference<Primitive> > localprimitives;
+    vector<Reference<Primitive> > virtualprimitives;
     mutable vector<VolumeRegion *> volumeRegions;
     map<string, vector<Reference<Primitive> > > instances;
     vector<Reference<Primitive> > *currentInstance;
@@ -1064,11 +1065,12 @@ void pbrtShape(const string &name, const ParamSet &params) {
     else {
         if (isVirtual) {
         	// add to both sets
-        	renderOptions->diffprimitives.push_back(prim);
+        	renderOptions->virtualprimitives.push_back(prim);
         	renderOptions->primitives.push_back(prim);
         }
         else {
-            renderOptions->diffprimitives.push_back(prim);
+            renderOptions->localprimitives.push_back(prim);
+            renderOptions->primitives.push_back(prim);
         }
         if (area != NULL) {
             renderOptions->lights.push_back(area);
@@ -1162,7 +1164,9 @@ void pbrtObjectInstance(const string &name) {
     Reference<Primitive> prim =
         new TransformedPrimitive(in[0], animatedWorldToInstance);
     renderOptions->primitives.push_back(prim);
-    renderOptions->diffprimitives.push_back(prim);
+
+    // todo assume its virtual
+    renderOptions->MakeScene(renderOptions->virtualprimitives);
 }
 
 
@@ -1183,9 +1187,10 @@ void pbrtWorldEnd() {
     Renderer *renderer = renderOptions->MakeRenderer();
     Scene *scene = renderOptions->MakeScene(renderOptions->primitives);
     if (renderOptions->useDifferential) {
-    	Scene *scenediff = renderOptions->MakeScene(renderOptions->diffprimitives);
+    	Scene *scenediff1 = renderOptions->MakeScene(renderOptions->localprimitives);
+    	Scene *scenediff2 = renderOptions->MakeScene(renderOptions->virtualprimitives);
     	Differential d;
-    	d.process(renderer, renderOptions->cameraObj, scene, scenediff);
+    	d.process(renderer, renderOptions->cameraObj, scene, scenediff1, scenediff2);
     }
     else {
     	if (scene && renderer) renderer->Render(scene);
