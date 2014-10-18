@@ -126,6 +126,7 @@
 #include "volumes/exponential.h"
 #include "volumes/homogeneous.h"
 #include "volumes/volumegrid.h"
+#include "volumes/volumefluid.h"
 #include <map>
  #if (_MSC_VER >= 1400)
  #include <stdio.h>
@@ -534,6 +535,8 @@ VolumeRegion *MakeVolumeRegion(const string &name,
         vr = CreateGridVolumeRegion(volume2world, paramSet);
     else if (name == "exponential")
         vr = CreateExponentialVolumeRegion(volume2world, paramSet);
+    else if (name == "volumefluid")
+        vr = CreateFluidVolumeRegion(volume2world, paramSet);
     else
         Warning("Volume region \"%s\" unknown.", name.c_str());
     paramSet.ReportUnused();
