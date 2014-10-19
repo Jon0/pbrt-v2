@@ -62,7 +62,7 @@ public:
     void WriteImage(float splatScale);
     void UpdateDisplay(int x0, int y0, int x1, int y1, float splatScale);
 
-    void getPixRGB(int x, int y, float rgb[3]);
+    void getPixRGB(int x, int y, float rgb[3], bool cc);
     float getPixDepth(int x, int y);
     string getFilename();
     Film *clone();

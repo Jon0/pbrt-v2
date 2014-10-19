@@ -175,8 +175,26 @@ void ImageFilm::GetPixelExtent(int *xstart, int *xend,
     *yend   = yPixelStart + yPixelCount;
 }
 
-void ImageFilm::getPixRGB(int x, int y, float rgb[3]) {
+void ImageFilm::getPixRGB(int x, int y, float rgb[3], bool cc) {
 	XYZToRGB((*pixels)(x, y).Lxyz, rgb);
+
+    // Normalize pixel with weight sum
+	if (cc) {
+		float weightSum = (*pixels)(x, y).weightSum;
+		if (weightSum != 0.f) {
+			float invWt = 1.f / weightSum;
+			rgb[0] = max(0.f, rgb[0] * invWt);
+			rgb[1] = max(0.f, rgb[1] * invWt);
+			rgb[2] = max(0.f, rgb[2] * invWt);
+		}
+
+		float splatScale = 1.0f;
+		float splatRGB[3];
+		XYZToRGB((*pixels)(x, y).splatXYZ, splatRGB);
+		rgb[0] += splatScale * splatRGB[0];
+		rgb[1] += splatScale * splatRGB[1];
+		rgb[2] += splatScale * splatRGB[2];
+	}
 }
 
 float ImageFilm::getPixDepth(int x, int y) {

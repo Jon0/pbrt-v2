@@ -59,7 +59,7 @@ public:
     virtual void UpdateDisplay(int x0, int y0, int x1, int y1, float splatScale = 1.f);
     virtual void WriteImage(float splatScale = 1.f) = 0;
 
-    virtual void getPixRGB(int x, int y, float rgb[3]) = 0;
+    virtual void getPixRGB(int x, int y, float rgb[3], bool cc) = 0;
     virtual float getPixDepth(int x, int y) = 0;
     virtual string getFilename() = 0;
     virtual Film *clone() = 0;

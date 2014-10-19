@@ -25,7 +25,7 @@ void Differential::DiffWriteImage(string fn, float *rgb, int width, int height) 
 }
 
 Differential::Differential() {
-	maskSamples = 32;
+	maskSamples = 16;
 }
 
 Differential::~Differential() {}
@@ -68,20 +68,19 @@ void Differential::process(string fn, Renderer *renderer, Camera *c, Scene *s1, 
     								volumeIntegrator, false);
 
 
-    //masker1->Render(s3);
 
     // create outputs
 	renderer->RenderToFilm(s1, *f1);
 	renderer->RenderToFilm(s2, *f2);
+
+
+	// rendering with no lighting
+	s2->lights.clear();
+    s3->lights.clear();
+
 	masker1->RenderToFilm(s3, *f3);
 	masker2->RenderToFilm(s2, *f4);
 	findDifferential(f1, f2, f3, f4);
-
-
-
-
-
-
 }
 
 /*
@@ -90,27 +89,18 @@ void Differential::process(string fn, Renderer *renderer, Camera *c, Scene *s1, 
  * film f3 -- virtual only
  */
 void Differential::findDifferential(Film *f1, Film *f2, Film *f3, Film *f4) {
-
-	width = f1->xResolution;
-	height = f1->yResolution;
 	float *rgb = new float[3 * width * height];
 
 	// temp values
-	float rgbF1[3], rgbF2[3], rgbF3[3], rgbF4[3];
+	float rgbF1[3], rgbF2[3], rgbF3[3], rgbF4[3], photoPixels[3];
 
 	for (int x = 0; x < width; ++x) {
 		for (int y = 0; y < height; ++y) {
 			float *out = &rgb[3*(y * width + x)];
-
-			f1->getPixRGB(x, y, rgbF1);
-			f2->getPixRGB(x, y, rgbF2);
-			f3->getPixRGB(x, y, rgbF3);
-			f4->getPixRGB(x, y, rgbF4);
-
-			float photoPixels[3];
-			//photoPixels[0] = 1.0;
-			//photoPixels[1] = 1.0;
-			//photoPixels[2] = 1.0;
+			f1->getPixRGB(x, y, rgbF1, true);
+			f2->getPixRGB(x, y, rgbF2, true);
+			f3->getPixRGB(x, y, rgbF3, false); // mask of virtual geom
+			f4->getPixRGB(x, y, rgbF4, false); // mask of local geom
 			photoImage[y * width + x].ToRGB(photoPixels);
 
 			float geomWeight = rgbF3[0] / (float)maskSamples;
@@ -126,9 +116,7 @@ void Differential::findDifferential(Film *f1, Film *f2, Film *f3, Film *f4) {
 				out[i] += geomWeight * rgbF1[i];
 				out[i] += nonlocalWeight * nongeomWeight * photoPixels[i];
 				out[i] += localWeight * nongeomWeight * photoPixels[i] * d;
-				//out[i] = rgbF3[i];
 			}
-
 		}
 	}
 

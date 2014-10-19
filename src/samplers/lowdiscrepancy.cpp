@@ -84,7 +84,7 @@ LDSampler *CreateLowDiscrepancySampler(const ParamSet &params, const Film *film,
     // Initialize common sampler parameters
     int xstart, xend, ystart, yend;
     film->GetSampleExtent(&xstart, &xend, &ystart, &yend);
-    int nsamp = params.FindOneInt("pixelsamples", 4);
+    int nsamp = params.FindOneInt("pixelsamples", 8);
 	std::cout << nsamp << std::endl;
     if (PbrtOptions.quickRender) nsamp = 1;
     return new LDSampler(xstart, xend, ystart, yend, nsamp,
