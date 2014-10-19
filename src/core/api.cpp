@@ -170,11 +170,13 @@ struct RenderOptions {
     RenderOptions();
     Scene *MakeScene(vector<Reference<Primitive> > &);
     Camera *MakeCamera() const;
-    Renderer *MakeRenderer() const;
+    Renderer *MakeRenderer();
 
     // RenderOptions Public Data
     float transformStartTime, transformEndTime;
     string photoFile;
+    string preLocal;
+    string preLocalMask;
     string FilterName;
     ParamSet FilterParams;
     string FilmName;
@@ -1189,20 +1191,26 @@ void pbrtWorldEnd() {
     }
 
     // Create scene and render
+	Differential d;
     Renderer *renderer = renderOptions->MakeRenderer();
-    Scene *scene = renderOptions->MakeScene(renderOptions->primitives);
     if (renderOptions->useDifferential) {
+    	Scene *scene = renderOptions->MakeScene(renderOptions->primitives);
     	Scene *scenediff1 = renderOptions->MakeScene(renderOptions->localprimitives);
     	Scene *scenediff2 = renderOptions->MakeScene(renderOptions->virtualprimitives);
-    	Differential d;
-    	d.process(renderOptions->photoFile, renderer, renderOptions->cameraObj, scene, scenediff1, scenediff2);
+
+    	d.process(renderOptions->photoFile, renderOptions->preLocal,
+    			renderOptions->preLocalMask, renderer, renderOptions->cameraObj, scene,
+    			scenediff1, scenediff2);
     }
     else {
-    	if (scene && renderer) renderer->Render(scene);
+    	Scene *scene = renderOptions->MakeScene(renderOptions->localprimitives);
+        d.saveWithMask(renderer, renderOptions->cameraObj, scene);
+    	//if (scene && renderer) renderer->Render(scene);
     }
     TasksCleanup();
     delete renderer;
-    delete scene;
+    //delete scene;
+
 
     // Clean up after rendering
     graphicsState = GraphicsState();
@@ -1243,7 +1251,13 @@ Scene *RenderOptions::MakeScene(vector<Reference<Primitive> > &primitives) {
 }
 
 
-Renderer *RenderOptions::MakeRenderer() const {
+Renderer *RenderOptions::MakeRenderer() {
+	useDifferential = (RendererParams.FindOneInt("differential", 0) > 0);
+	photoFile = RendererParams.FindOneString("photo", "");
+    preLocal = RendererParams.FindOneString("local", "");
+    preLocalMask = RendererParams.FindOneString("localmask", "");
+
+
     Renderer *renderer = NULL;
     Camera *camera = renderOptions->cameraObj = MakeCamera();
     if (RendererName == "metropolis") {

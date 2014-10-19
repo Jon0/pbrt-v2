@@ -45,11 +45,16 @@ public:
 	Differential();
 	virtual ~Differential();
 
-	void process(string, Renderer *, Camera *, Scene *, Scene *, Scene *);
+
+	void saveWithMask(Renderer *renderer, Camera *c, Scene *s1);
+	void process(string, string, string, Renderer *, Camera *, Scene *, Scene *, Scene *);
+
 
 private:
 	void DiffWriteImage(string, float *, int width, int height);
 	void findDifferential(Film *, Film *, Film *, Film *f4);
+	void findDifferential(RGBSpectrum *, RGBSpectrum *, Film *, Film *);
+	void get(RGBSpectrum *s, int x, int y, int width, float rgb[3]) ;
 	RGBSpectrum *get(RGBSpectrum *, int, int, int);
 	RGBSpectrum *photoImage;
 	int width, height;
