@@ -1,6 +1,22 @@
-cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_COMPILER_ARG1=-std=c++11 <path/to/src>
+
+To compile PBRT, download source; Make a new directory and cd into this directory from command line, run following commands to build.
+
+cmake <path/to/src>
 
 make
 
+This produces the executable which can be run:
+
 ./pbrtmain <pbrt scene file>
 
+to render a series of frames one frame should be used to render the local scene:
+
+Renderer "sampler" "integer differential" 0
+
+this produces a rendering of local scene along with a mask, 
+
+rendering the frames can then be done with 
+
+Renderer "sampler" "integer differential" 1 "string photo" "bgism_whitebalanced.exr" "string local" "local.exr" "string localmask" "localmask.exr"
+
+where the options "string local" and "string localmask" are the files created by the previous run, these get reused by each rendered frame.
