@@ -92,6 +92,7 @@ void Differential::process(string fn, string l, string lm, Renderer *renderer, C
 		return;
 	}
 	photoImage = ReadImage(fn, &width, &height);
+	cout << fn << " size " << width << " x " << height << endl;
 
 	// create 3 films
 	Film *f1 = c->film->clone(width, height);
@@ -178,19 +179,19 @@ void Differential::findDifferential(Film *f1, Film *f2, Film *f3, Film *f4) {
 				out[i] += geomWeight * rgbF1[i];
 				out[i] += nonlocalWeight * nongeomWeight * photoPixels[i];
 				out[i] += localWeight * nongeomWeight * photoPixels[i] * d;
-				//out1[i] = d;
-				//out2[i] = geomWeight;
-				//out3[i] = localWeight;
-				//out4[i] = rgbF1[i];
+				out1[i] = d;
+				out2[i] = geomWeight;
+				out3[i] = localWeight;
+				out4[i] = rgbF1[i];
 			}
 		}
 	}
 
 	DiffWriteImage(f1->getFilename(), rgb, width, height);
-	//DiffWriteImage("v1"+f1->getFilename(), rgbv1, width, height);
-	//DiffWriteImage("v2"+f1->getFilename(), rgbv2, width, height);
-	//DiffWriteImage("v3"+f1->getFilename(), rgbv3, width, height);
-	//DiffWriteImage("v4"+f1->getFilename(), rgbv4, width, height);
+	DiffWriteImage("v1"+f1->getFilename(), rgbv1, width, height);
+	DiffWriteImage("v2"+f1->getFilename(), rgbv2, width, height);
+	DiffWriteImage("v3"+f1->getFilename(), rgbv3, width, height);
+	DiffWriteImage("v4"+f1->getFilename(), rgbv4, width, height);
 
     delete[] rgb;
 }
